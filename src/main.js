@@ -4,12 +4,18 @@ import store from './store'
 import router from './router'
 import FastClick from 'fastclick';
 import * as filters from './filters/';
-import './util/rem'
+// import './util/rem'
 
 // import './styles/main.less';
 
 FastClick.attach(document.body);
 Vue.config.productionTip = false
+
+// 开发环境下面使用vConsole进行调试
+if (process.env.NODE_ENV === 'development') {
+  const VConsole = require('vconsole')
+  new VConsole()
+}
 
 // 注册过滤器
 Object.keys(filters).forEach((key) => {
