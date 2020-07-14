@@ -4,7 +4,7 @@ import store from './store'
 import router from './router'
 import FastClick from 'fastclick';
 import * as filters from './filters/';
-// import './util/rem'
+import './util/rem'
 
 // import './styles/main.less';
 
