@@ -1,32 +1,83 @@
 
-* {
-  -webkit-tap-highlight-color: rgba(0,0,0,0);
-  -webkit-touch-callout: none;
-  -webkit-overflow-scrolling: touch;
+@import url(./root.less);
+.message {
+	display: table;
+    position: fixed;
+    z-index: 2001;
+    width: 80%;
+    top: 0;
+    right: 0;
+    left: 0;
+    bottom: 0;
+    margin: auto;
+    text-align: center;
+    span{
+        background-color: rgba(0,0,0,0.6);
+        color: #fff;
+        border-radius: 0.04rem;
+        padding: 0.1rem 0.12rem; 
+        font-size: 0.14rem;
+        display: inline-block;
+        line-height: 0.2rem;
+        min-width: 40vw;
+    }
+}
+.fr{
+    float: right;
+}
+.arrow-r{
+    position: relative;
+    padding-right: 0.12rem;
+    &:before {
+        content: "";
+        height: 6px;
+        width: 6px;
+        border-width: 2px 2px 0 0;
+        border-color: #C8C8CD;
+        border-style: solid;
+        transform: matrix(0.71, 0.71, -0.71, 0.71, 0, 0);
+        position: absolute;
+        top: 50%;
+        margin-top: -4px;
+        right: 0;
+    }
+}
+.container{
+    font-size: .16rem;
+    height: 100vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
-.page {
-  background: #fff;
-  color: @colorFont;
-  position: absolute;
-  width: 100%;
-  height: 100%;
+.center{
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.page-content {
-  width: 100%;
-  height: 100%;
-  padding: 10px;
+
+.row{
+  display: flex;
+  justify-content: space-between;
+  align-content: center;
 }
-.common-msg-area {
-  background: #fff;
-  border-radius: 4px;
-  box-shadow: 0 0 4px 0px rgba(128, 100, 100, 0.2);
-  margin-bottom: 15px;
+
+.colum{
+  display: flex;
+  flex-direction: column;
+  align-content: center;
+  justify-content: space-between;
 }
-.header-fixed {
-  padding-top: 44px;
-}
-.iconfont {
-  display: inline-block;
-  font-size: 14px;
+
+.button{
+  width: 75.46%;
+  margin: 0 auto;
+  line-height: 0.46rem;
+  background-color: @mainColor;
+  color: #fff;
+  font-size: 0.18rem;
+  border-radius: 0.28rem;
+  text-align: center;
+  &:active{
+      opacity: 0.8;
+  }
 }

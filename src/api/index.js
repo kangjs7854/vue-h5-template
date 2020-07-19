@@ -1,9 +1,7 @@
-import axios from 'axios'
-
-let baseUrl
+import url from './urls'
 
 export default{
-    getHome(params){
-        return axios.get(baseUrl,params)
+    getUserInfo(params){
+        return $http.post(url.getUerInfo,params)
     }
 }

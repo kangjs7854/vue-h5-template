@@ -4,10 +4,12 @@ import store from './store'
 import router from './router'
 import FastClick from 'fastclick';
 import * as filters from './filters/';
-// import './util/rem'
+import { injectGlobal } from './util/index'
 
-// import './styles/main.less';
+import './styles/common.less'//全局常用样式
+import baseUI from './components/lib'
 
+Vue.use(baseUI)
 FastClick.attach(document.body);
 Vue.config.productionTip = false
 
@@ -21,6 +23,8 @@ if (process.env.NODE_ENV === 'development') {
 Object.keys(filters).forEach((key) => {
   Vue.filter(key, filters[key]);
 });
+
+injectGlobal(); //全局注入
 
 new Vue({
   store,
