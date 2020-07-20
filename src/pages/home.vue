@@ -1,3 +1,9 @@
+<!--
+ * @Date: 2020-07-20 10:21:49
+ * @LastEditors: kjs
+ * @LastEditTime: 2020-07-20 10:55:23
+ * @FilePath: \vue-h5-template\src\pages\home.vue
+--> 
 <template>
   <div class="home container ">
       <p class="center">首页</p>
@@ -11,7 +17,7 @@
 export default {
     name:'home',
 
-    props:{
+    props:{ 
 
     },
     
