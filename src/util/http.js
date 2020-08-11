@@ -1,7 +1,7 @@
 /*
  * @Date: 2020-07-14 14:34:09
  * @LastEditors: kjs
- * @LastEditTime: 2020-08-06 10:11:49
+ * @LastEditTime: 2020-08-10 16:45:09
  * @FilePath: \vue-h5-template\src\util\http.js
  */
 
@@ -20,7 +20,7 @@ const post = (url, params = {}) => {
   const instance = axios.create({
     timeout: 1000 * 10,
     headers: {
-      'Content-Type': 'application/x-www-form-urlencoded'
+      'Content-Type': 'application/json'
     }
   })
 
@@ -28,7 +28,8 @@ const post = (url, params = {}) => {
     userId: '',
     session_key: '',
     platform: '',
-    timesamp: Date.parse(new Date()) / 1000 + ''//时间戳
+    timesamp: Date.parse(new Date()) / 1000 + '',//时间戳
+    sign:''
   })
 
   let reqUrl = url.includes("http") ? url : basePath + url
@@ -36,7 +37,9 @@ const post = (url, params = {}) => {
   return instance.post(reqUrl, qs.stringify(params)).then((res) => {
     if (!res.data || res.data.code == undefined) {
       // do sometings
+      
     }
+    return res.data
   }).catch((error) => {
     console.log('error', error);
   })
