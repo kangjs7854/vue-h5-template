@@ -1,7 +1,7 @@
 <!--
  * @Date: 2020-07-20 10:21:49
  * @LastEditors: kjs
- * @LastEditTime: 2020-08-07 17:23:41
+ * @LastEditTime: 2020-08-15 09:56:35
  * @FilePath: \vue-h5-template\src\pages\home.vue
 --> 
 <template>
@@ -41,10 +41,8 @@ export default {
    
     methods:{
         goToAbout(){
-            console.log(222);
             this.toast("跳转")
             .then(()=>{
-                
                 this.$router.push("/about")
             })
         }

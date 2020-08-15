@@ -1,3 +1,9 @@
+/*
+ * @Date: 2020-07-14 14:34:09
+ * @LastEditors: kjs
+ * @LastEditTime: 2020-08-15 10:45:12
+ * @FilePath: \vue-h5-template\vue.config.js
+ */
 const CompressionWebpackPlugin = require('compression-webpack-plugin')
 const isProd = process.env.NODE_ENV === 'production'
 
@@ -30,7 +36,7 @@ module.exports = {
         changeOrigin: true,
         ws: true,
         pathRewrite: {
-          "^/api": "",
+          "^/api2": "",
         },
       },
     },

@@ -9,7 +9,7 @@
 >快速初始化vue项目
 
 
-## 目录规范
+# 目录规范
 
 
 ```
@@ -74,7 +74,7 @@
 
 
 
-## vue文件规范
+# vue文件规范
 >文件结构
 
 - 注释 vscode安装 koroFileHeader 插件扩展生成页面相关注释，方便查看开发信息
@@ -96,6 +96,7 @@
 </template>
 ```
 - 脚本
+
 ```js
 <script>
 import TestComponent from '@/components/TestComponent.vue'
@@ -124,6 +125,20 @@ export default {
 
     },
 
+    async beforeMount(){
+        // 开始加载
+        this.loading = true
+        try {
+            const data = await getUserInfo()
+        } catch (error) {
+            console.log(error)
+        } finally {
+            // 停止加载
+            this.loading = false
+        }
+
+    }
+
     mounted(){
         //使用hook监听生命周期，这样监听和销毁的代码就不会分散在各个生命周期中，代码可读性更高，更好维护
         window.addEventListener('resize',this.handleResize)
@@ -135,6 +150,10 @@ export default {
     methods:{
         handleResize(){
             //do somethings
+        },
+
+        getUserInfo(){
+
         }
     },
 
@@ -149,15 +168,72 @@ export default {
 </script>
 
 ```
-- 样式 scoped属性为vue文件添加样式的作用域，不用担心样式命名冲突
+
+# 注意事项
+
+1. v-for v-if不能一起使用，v-for优先级高于v-if
+可以使用过滤器先过滤，再循环渲染
+```
+// 计算属性
+computed: {
+  filterList () {
+    return this.showData.filter((data)=> {
+        // 返回需要显示的数据
+        return data.isShow
+    })    
+}
+  
+// DOM
+  
+<ul>
+  <li v-for="item in filterList" :key="item.id">
+  {{ item.name }}
+  </li>
+</ul>
+
+```
+
+2. 不能直接修改props
+子组件接收到父组件传过来的props，不能直接修改，防止数据流变得不可控，需要通过注册事件让父组件触发，改变props的值。但是这样的方法比较繁琐，可以使用
+v-model和sync的修饰符
+
+- v-model: 
+首先要通过props注册value属性，注意v-model本身就是value，onchange的一个语法糖。
+```
+props:{
+    value:{
+        type:[String,Number]
+    }
+}
+
+this.$emit('input',//需要改变的值)
+
+
+//父组件就可以通过v-model绑定传给子组件的props
+```
+
+- sync 修饰符
+```
+//子组件
+this.$emit('update:')
+```
+
+3. 样式
+
+- 样式隔离，scoped属性为vue文件添加样式的作用域，不用担心样式命名冲突
 ```css
 <style lang="less" scoped>
 
 </style>
 ```
+- 用less或sass实现标签的嵌套写法，更加直观
+- 多处使用可写成全局样式，放在 styles中的common.less文件
+- 单位使用rem，百分比布局，vw,vh，实现样式大小的自适应
+- /deep/ 前缀修改第三方组件库的默认样式
 
-> js使用规范
-- 变量命名不使用var，使用let或const
+4. 变量命名
+
+变量命名不使用var，使用let或const
 - 函数声明尽量使用箭头函数，减少this指向的紊乱
 - 变量名使用驼峰式
 ```js
@@ -167,8 +243,3 @@ export default {
     }
     sayName()
 ```
-
-> 样式规范
-- 用less或sass实现标签的嵌套写法，更加直观
-- 多处使用可写成全局样式，放在 styles中的common.less文件
-- 单位使用rem，百分比布局，vw,vh，实现样式大小的自适应

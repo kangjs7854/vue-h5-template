@@ -1,7 +1,7 @@
 /*
  * @Date: 2020-07-14 14:34:09
  * @LastEditors: kjs
- * @LastEditTime: 2020-08-13 18:52:18
+ * @LastEditTime: 2020-08-15 11:54:04
  * @FilePath: \vue-h5-template\src\util\http.js
  */
 
@@ -9,7 +9,48 @@ import axios from 'axios'
 import qs from 'qs'; // 引入qs模块，用来序列化post类型的数据，后面会提到
 import CryptoJS from 'crypto-js';
 
-let basePath = '/api/v1'
+let basePath = 'http://localhost:3000'
+
+/**
+ * @description 请求拦截
+ * 1.每次发送请求之前判断vuex中是否存在token
+ * 2.如果存在，则统一在http请求的header都加上token，这样后台根据token判断你的登录情况
+ * 3.即使本地存在token，也有可能token是过期的，所以在响应拦截器中要对返回状态进行判断
+ */
+axios.interceptors.request.use(
+  config => {
+    const token = store.state.token;
+    token && (config.headers.Authorization = token);
+    return config;
+  },
+  error => {
+    return Promise.error(error);
+  })
+
+/**
+ * @description 响应拦截
+ * 1.如果返回的状态码为200，说明接口请求成功，可以正常拿到数据
+ * 2.否则的话抛出错误处理异常
+ * 
+ * 假设登录验证的token过期，服务端会返回一个'token invalid'的标识
+ * 不能在请求之后再更新token，就需要用到响应拦截
+ */
+axios.interceptors.response.use(
+  response => {
+    if (response.status === 200) {
+      if(response.data.message === 'token invalid'){
+        handleRefreshToken(newToken)
+      }
+      return Promise.resolve(response);
+    } else {
+      return Promise.reject(response);
+    }
+  },
+  error => {
+    Promise.reject(errorHander(error.response.status))
+  })
+
+
 
 /**
  * post请求封装
@@ -20,25 +61,10 @@ const post = (url, params = {}) => {
   //时间戳
   const requestTimestamp = new Date().getTime();
   //唯一的id
-  const requestId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-    let r = Math.random() * 16 | 0,
-      v = c == 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  })
-  //生成签名
-  const paramsArr = Object.keys(params)
-  let signStr = ''
-  //ASCII排序参数
-  paramsArr.sort()
-  paramsArr.forEach(el => {
-    signStr += `${el}=${params[el] || ''}&`
-  })
-  const key = '' //与服务端协商好的key
-  //最掉最后一个参数的&
-  signStr = signStr.slice(0, -1) + key
-  const sign = CryptoJS.md5(signStr).toString().toUpperCase()
-
-  const instance = axios.create({
+  const requestId = createUniqueId()
+  const sign = createSign(params)
+  //axios请求选项配置
+  const option = {
     timeout: 1000 * 10,
     headers: {
       'Content-Type': 'application/json',
@@ -46,15 +72,14 @@ const post = (url, params = {}) => {
       requestTimestamp,
       sign
     }
-  })
+  }
+  params = handleParams(option.headers['Content-Type'], params)
+
+  const instance = axios.create(option)
 
   let reqUrl = url.includes("http") ? url : basePath + url
 
-  return instance.post(reqUrl, qs.stringify(params)).then((res) => {
-    if (!res.data || res.data.code == undefined) {
-      // do sometings
-
-    }
+  return instance.post(reqUrl, params).then((res) => {
     return res.data
   }).catch((error) => {
     console.log('error', error);
@@ -68,29 +93,82 @@ const post = (url, params = {}) => {
  * @param {Object} parms 
  * @param {Object} headers 
  */
-const get = (url, parms = {}, headers = {}) => {
-  url += '?';
-  for (let key in parms) {
-    url += key + '=' + parms[key] + '&';
-  }
-  let option = Object.assign({}, headers);
+const get = (url, params = {}, headers = {}) => {
+  url += '?' + qs.stringify(params)
   let instance = axios.create({
     timeout: 1000 * 10,
-    headers: option
+    headers,
   });
+  let reqUrl = url.includes("http") ? url : basePath + url
 
-  return instance.get(url).then((res) => {
+  return instance.get(reqUrl).then((res) => {
     return res.data;
   }).catch(error => {
     console.log('error', error);
   });
 }
 
-export default () => {
-  if (typeof window.$http == 'undefined') {
-    window.$http = {
-      post,
-      get
-    }
+
+/**@description 生成签名
+ * 1.将参数的属性按 ASCII排序参数
+ * 2.拼接成字符串+服务端协商好的key
+ * 3.md5加密字符串
+ * @param {Object} params 参数 
+ * @param {String} key 服务端协商好的密钥key
+ */
+function createSign(params = {}, key = '') {
+  const paramsArr = Object.keys(params)
+  let signStr = ''
+
+  paramsArr.sort()
+  paramsArr.forEach(el => {
+    signStr += `${el}=${params[el]}&`
+  })
+
+  //最掉最后一个参数的&
+  signStr = signStr.slice(0, -1) + key
+  return CryptoJS.MD5(signStr).toString().toUpperCase()
+
+}
+
+/**
+ * @description 生成唯一的id
+ */
+function createUniqueId() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    let r = Math.random() * 16 | 0,
+      v = c == 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  })
+}
+
+/**
+ * @description 处理不同请求头时的参数处理
+ * Content-Type 
+ * 1.application/x-www-form-urlencoded 传递的参数要是字符串形式，使用qs.stringify(params)
+ * 2.application/json 传递json对象，当params为对象时不需要额外处理
+ */
+function handleParams(ContentType, params) {
+  return ContentType == 'application/x-www-form-urlencoded'
+    ? qs.stringify(params)
+    : params
+}
+
+
+function errorHander(status) {
+  const obj = {
+    '404': "请求资源不存在",
+    '500': '服务器无响应'
   }
+  return obj[status]
+}
+
+function handleRefreshToken(newToken){
+
+}
+
+
+export default {
+  post,
+  get
 }

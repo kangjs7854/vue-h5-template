@@ -38,7 +38,7 @@ export default {
     },
     // 停止监听  
     unbind() {
-        bserver.disconnect();
+        observer.disconnect();
     }
 }
 
