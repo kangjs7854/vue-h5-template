@@ -1,7 +1,7 @@
 /*
  * @Date: 2020-07-14 14:34:09
  * @LastEditors: kjs
- * @LastEditTime: 2020-08-15 11:54:04
+ * @LastEditTime: 2020-08-17 14:01:31
  * @FilePath: \vue-h5-template\src\util\http.js
  */
 
@@ -10,6 +10,102 @@ import qs from 'qs'; // 引入qs模块，用来序列化post类型的数据，�
 import CryptoJS from 'crypto-js';
 
 let basePath = 'http://localhost:3000'
+
+export default class Http {
+  constructor() {
+    this.requestTimestamp = new Date().getTime();
+    this.requestId = Http.createUniqueId()
+  }
+
+  //生成唯一的id
+  static createUniqueId() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+      let r = Math.random() * 16 | 0,
+        v = c == 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    })
+  }
+
+  /**@description 生成签名
+  * 1.将参数的属性按 ASCII排序参数
+  * 2.拼接成字符串+服务端协商好的key
+  * 3.md5加密字符串
+  * @param {Object} params 参数 
+  * @param {String} key 服务端协商好的密钥key
+  */
+  static createSign(params = {}, key = '') {
+    const paramsArr = Object.keys(params)
+    let signStr = ''
+
+    paramsArr.sort()
+    paramsArr.forEach(el => {
+      signStr += `${el}=${params[el]}&`
+    })
+
+    //最掉最后一个参数的&
+    signStr = signStr.slice(0, -1) + key
+    return CryptoJS.MD5(signStr).toString().toUpperCase()
+
+  }
+
+  /**
+   * @description 处理不同请求头时的参数处理
+   * Content-Type 
+   * 1.application/x-www-form-urlencoded 传递的参数要是字符串形式，使用qs.stringify(params)
+   * 2.application/json 传递json对象，当params为对象时不需要额外处理
+   */
+  static handleParams(ContentType, params) {
+    return ContentType == 'application/x-www-form-urlencoded'
+      ? qs.stringify(params)
+      : params
+  }
+
+  /**
+   * post请求封装
+   * @param {String} url 请求路径 
+   * @param {Object} params 请求参数
+   */
+  post(url, params = {}) {
+    //axios请求选项配置
+    const option = {
+      timeout: 1000 * 10,
+      headers: {
+        'Content-Type': 'application/json',
+        requestId: this.requestId,
+        requestTimestamp: this.requestTimestamp,
+        sign: Http.createSign(params)
+      }
+    }
+    params = Http.handleParams(option.headers['Content-Type'], params)
+    const instance = axios.create(option)
+    let reqUrl = url.includes("http") ? url : basePath + url
+    return instance.post(reqUrl, params)
+      .then(res => {
+        return res.data
+      })
+      .catch(error => {
+        console.log('error', error);
+      })
+  }
+
+  get(url, params = {}, headers = {}) {
+    url += '?' + qs.stringify(params)
+    let instance = axios.create({
+      timeout: 1000 * 10,
+      headers,
+    });
+    let reqUrl = url.includes("http") ? url : basePath + url
+
+    return instance.get(reqUrl)
+      .then(res => {
+        return res.data;
+      })
+      .catch(error => {
+        console.log('error', error);
+      });
+  }
+
+}
 
 /**
  * @description 请求拦截
@@ -38,7 +134,7 @@ axios.interceptors.request.use(
 axios.interceptors.response.use(
   response => {
     if (response.status === 200) {
-      if(response.data.message === 'token invalid'){
+      if (response.data.message === 'token invalid') {
         handleRefreshToken(newToken)
       }
       return Promise.resolve(response);
@@ -52,123 +148,17 @@ axios.interceptors.response.use(
 
 
 
-/**
- * post请求封装
- * @param {String} url 请求路径 
- * @param {Object} params 请求参数
- */
-const post = (url, params = {}) => {
-  //时间戳
-  const requestTimestamp = new Date().getTime();
-  //唯一的id
-  const requestId = createUniqueId()
-  const sign = createSign(params)
-  //axios请求选项配置
-  const option = {
-    timeout: 1000 * 10,
-    headers: {
-      'Content-Type': 'application/json',
-      requestId,
-      requestTimestamp,
-      sign
-    }
-  }
-  params = handleParams(option.headers['Content-Type'], params)
-
-  const instance = axios.create(option)
-
-  let reqUrl = url.includes("http") ? url : basePath + url
-
-  return instance.post(reqUrl, params).then((res) => {
-    return res.data
-  }).catch((error) => {
-    console.log('error', error);
-  })
-
-}
-
-/**
- * get请求
- * @param {String} url 
- * @param {Object} parms 
- * @param {Object} headers 
- */
-const get = (url, params = {}, headers = {}) => {
-  url += '?' + qs.stringify(params)
-  let instance = axios.create({
-    timeout: 1000 * 10,
-    headers,
-  });
-  let reqUrl = url.includes("http") ? url : basePath + url
-
-  return instance.get(reqUrl).then((res) => {
-    return res.data;
-  }).catch(error => {
-    console.log('error', error);
-  });
-}
-
-
-/**@description 生成签名
- * 1.将参数的属性按 ASCII排序参数
- * 2.拼接成字符串+服务端协商好的key
- * 3.md5加密字符串
- * @param {Object} params 参数 
- * @param {String} key 服务端协商好的密钥key
- */
-function createSign(params = {}, key = '') {
-  const paramsArr = Object.keys(params)
-  let signStr = ''
-
-  paramsArr.sort()
-  paramsArr.forEach(el => {
-    signStr += `${el}=${params[el]}&`
-  })
-
-  //最掉最后一个参数的&
-  signStr = signStr.slice(0, -1) + key
-  return CryptoJS.MD5(signStr).toString().toUpperCase()
-
-}
-
-/**
- * @description 生成唯一的id
- */
-function createUniqueId() {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-    let r = Math.random() * 16 | 0,
-      v = c == 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  })
-}
-
-/**
- * @description 处理不同请求头时的参数处理
- * Content-Type 
- * 1.application/x-www-form-urlencoded 传递的参数要是字符串形式，使用qs.stringify(params)
- * 2.application/json 传递json对象，当params为对象时不需要额外处理
- */
-function handleParams(ContentType, params) {
-  return ContentType == 'application/x-www-form-urlencoded'
-    ? qs.stringify(params)
-    : params
-}
-
-
 function errorHander(status) {
-  const obj = {
+  const mapStatus = {
     '404': "请求资源不存在",
     '500': '服务器无响应'
   }
-  return obj[status]
+  return mapStatus[status]
 }
 
-function handleRefreshToken(newToken){
+function handleRefreshToken(newToken) {
 
 }
 
 
-export default {
-  post,
-  get
-}
+

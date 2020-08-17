@@ -1,11 +1,12 @@
 /*
  * @Date: 2020-07-14 14:34:09
  * @LastEditors: kjs
- * @LastEditTime: 2020-08-15 11:54:34
+ * @LastEditTime: 2020-08-17 13:59:12
  * @FilePath: \vue-h5-template\src\api\index.js
  */
 import url from './urls'
-import http from '@/util/http.js'
+import Http from '@/util/http.js'
+const http = new Http()
 export default {
     getUserInfo(params = {}) {
         return http.post(url.getUerInfo, params)
